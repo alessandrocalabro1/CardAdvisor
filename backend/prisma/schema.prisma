@@ -1,0 +1,164 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Card {
+  id           String          @id @default(uuid())
+  game         String
+  name         String
+  setName      String
+  cardNumber   String
+  rarity       String
+  language     String
+  version      String
+  condition    String
+  imageUrl     String?
+  notes        String?
+  status       String          // WATCH, CONSIDER, OWNED, SELL, AVOID
+  demandLevel  String          // LOW, MEDIUM, HIGH
+  supplyLevel  String          // LOW, MEDIUM, HIGH
+  reprintRisk  String          // LOW, MEDIUM, HIGH
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  
+  marketPrices MarketPrice[]
+  offers       Offer[]
+  portfolio    PortfolioItem[]
+  snapshots    PriceSnapshot[]
+  alerts       Alert[]
+}
+
+model MarketPrice {
+  id              String   @id @default(uuid())
+  cardId          String
+  card            Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  source          String   // OPTCG, CARDMARKET_EXPORT, PRICECHARTING, JUSTTCG, MANUAL, EBAY_FUTURE, OTHER
+  rawPrice        Float?
+  gradedPrice     Float?
+  lowPrice        Float?
+  trendPrice      Float?
+  averagePrice    Float?
+  medianPrice     Float?
+  currency        String
+  language        String?
+  condition       String?
+  lastUpdated     DateTime @default(now())
+  sourceProductId String?
+  productUrl      String?
+  confidenceScore Float
+  rawPayloadJson  String?
+  createdAt       DateTime @default(now())
+
+  // Data transparency fields
+  dataQuality     String   @default("REAL_PROVIDER")
+  isMock          Boolean  @default(false)
+  isSeedData      Boolean  @default(false)
+  providerMode    String   @default("LIVE")
+  explanation     String?
+}
+
+model Offer {
+  id                    String   @id @default(uuid())
+  cardId                String
+  card                  Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  marketplace           String   // VINTED, FACEBOOK, CARDMARKET, EBAY, TELEGRAM, PRIVATE, OTHER
+  title                 String
+  price                 Float
+  shipping              Float
+  totalPrice            Float
+  currency              String
+  condition             String
+  language              String
+  sellerReliability     String   // LOW, MEDIUM, HIGH
+  url                   String?
+  notes                 String?
+  isSuspicious          Boolean  @default(false)
+  suspiciousReasonsJson String?  // Stringified JSON array
+  confidenceScore       Float
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Data transparency fields
+  dataQuality           String   @default("MANUAL")
+  isMock                Boolean  @default(false)
+  isSeedData            Boolean  @default(false)
+  providerMode          String   @default("MANUAL")
+  explanation           String?
+}
+
+model PortfolioItem {
+  id                    String   @id @default(uuid())
+  cardId                String
+  card                  Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  purchasePrice         Float
+  shipping              Float
+  totalCost             Float
+  purchaseDate          DateTime
+  marketplace           String?
+  seller                String?
+  estimatedCurrentValue Float?
+  theoreticalProfitLoss Float?
+  roiPercentage         Float?
+  notes                 String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model PriceSnapshot {
+  id                   String   @id @default(uuid())
+  cardId               String
+  card                 Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  date                 DateTime @default(now())
+  source               String
+  minPrice             Float?
+  maxPrice             Float?
+  averagePrice         Float?
+  medianPrice          Float?
+  fairLow              Float?
+  fairHigh             Float?
+  listingOrSampleCount Int?
+  confidenceAvg        Float?
+  createdAt            DateTime @default(now())
+}
+
+model Alert {
+  id          String   @id @default(uuid())
+  cardId      String
+  card        Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  targetPrice Float
+  currency    String
+  marketplace String?
+  active      Boolean  @default(true)
+  triggered   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ProviderStatus {
+  id           String   @id @default(uuid())
+  providerName String   @unique // OPTCG, CARDMARKET_EXPORT, PRICECHARTING, JUSTTCG, MANUAL
+  status       String   // AVAILABLE, MOCKED, NOT_CONFIGURED, ERROR
+  message      String?
+  lastCheckedAt DateTime @default(now())
+}
+
+model WeeklyStrategy {
+  id                String   @id @default(uuid())
+  title             String
+  weekStartDate     DateTime
+  weekEndDate       DateTime
+  marketSummary     String
+  cardsToWatch      String
+  cardsToAvoid      String
+  buyZoneNotes      String
+  sellZoneNotes     String
+  riskNotes         String
+  relatedCardIdsJson String   @default("[]")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
