@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { apiGetCards, apiDeleteCard } from '../api/client';
 import { formatMoney, statusLabel, opportunityLabel } from '../utils/format';
+import CardArtwork from '../components/CardArtwork';
 
 interface WatchlistProps {
   settings: { currency: string };
@@ -239,11 +240,7 @@ export default function Watchlist({ settings, onNavigateToDetail, onNavigateToEd
                   <tr key={c.id} className="row-link" onClick={() => onNavigateToDetail(c.id)}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        {c.imageUrl ? (
-                          <img src={c.imageUrl} alt="" loading="lazy" style={{ width: 26, height: 36, objectFit: 'cover', borderRadius: 3, flexShrink: 0 }} />
-                        ) : (
-                          <div style={{ width: 26, height: 36, borderRadius: 3, background: 'var(--bg-surface)', border: '1px solid var(--border)', flexShrink: 0 }} />
-                        )}
+                        <CardArtwork src={c.imageUrl} name={c.name} size="thumb" style={{ width: 28, minWidth: 28 }} />
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 240 }}>
                             {c.name}
@@ -304,11 +301,14 @@ export default function Watchlist({ settings, onNavigateToDetail, onNavigateToEd
                 </div>
 
                 <div className="wl-thumb">
-                  {c.imageUrl ? (
-                    <img src={c.imageUrl} alt={c.name} loading="lazy" />
-                  ) : (
-                    <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>Nessuna immagine</span>
-                  )}
+                  <CardArtwork
+                    src={c.imageUrl}
+                    name={c.name}
+                    game={c.game}
+                    cardNumber={c.cardNumber}
+                    size="medium"
+                    style={{ width: '100%', height: '100%', border: 'none', borderRadius: 0 }}
+                  />
                   {c.bestOpportunityScore > 0 && (
                     <span className="badge badge-positive num" style={{ position: 'absolute', bottom: 7, right: 7, fontSize: 10.5 }}>
                       {c.bestOpportunityScore}

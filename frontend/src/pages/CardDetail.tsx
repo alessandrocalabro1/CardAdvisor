@@ -11,6 +11,7 @@ import {
   apiDeleteAlert, apiGetDecisionBrief, apiGetCardWeeklyStrategyReferences,
 } from '../api/client';
 import { renderDataQualityBadge } from '../utils/transparency';
+import CardArtwork from '../components/CardArtwork';
 import {
   formatMoney, formatDate, formatDateTime,
   statusLabel, opportunityLabel, confidenceLabel, levelLabel,
@@ -287,13 +288,14 @@ export default function CardDetail({ cardId, settings, onBack, onNavigateToStrat
       <div className="card-detail-layout">
         {/* Left: art + quick facts */}
         <div className="card-art-col">
-          <div className="card-img-container">
-            {card.imageUrl ? (
-              <img src={card.imageUrl} alt={card.name} />
-            ) : (
-              <span style={{ color: 'var(--text-muted)', fontSize: 12.5 }}>Nessuna immagine</span>
-            )}
-          </div>
+          <CardArtwork
+            src={card.imageUrl}
+            name={card.name}
+            game={card.game}
+            cardNumber={card.cardNumber}
+            setName={card.setName}
+            size="large"
+          />
 
           <div className="card" style={{ padding: '10px 16px' }}>
             <div className="def-row">

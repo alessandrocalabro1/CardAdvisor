@@ -200,10 +200,42 @@ export async function apiTestJustTcg(): Promise<any> {
   });
 }
 
-export async function apiSearchOptcg(query: string): Promise<any[]> {
-  return request<any[]>('/providers/optcg/search', {
+// -------------------------------------------------------------
+// Unified card search (provider-aware)
+// -------------------------------------------------------------
+export type GameKey = 'ONE_PIECE' | 'POKEMON' | 'YUGIOH' | 'MAGIC' | 'OTHER';
+
+export interface CardSearchResult {
+  provider: string;
+  game: GameKey;
+  externalId: string;
+  name: string;
+  setName?: string;
+  setCode?: string;
+  cardNumber?: string;
+  rarity?: string;
+  imageUrl?: string;
+  imageSmallUrl?: string;
+  imageLargeUrl?: string;
+  sourceUrl?: string;
+  marketUrl?: string;
+}
+
+export interface ProviderSearchStatus {
+  provider: string;
+  mode: 'live' | 'unavailable' | 'error';
+  message: string;
+}
+
+export interface CardSearchResponse {
+  results: CardSearchResult[];
+  providerStatus: ProviderSearchStatus;
+}
+
+export async function apiSearchCards(payload: { query: string; game: GameKey; limit?: number }): Promise<CardSearchResponse> {
+  return request<CardSearchResponse>('/cards/search', {
     method: 'POST',
-    body: JSON.stringify({ query }),
+    body: JSON.stringify({ limit: 20, ...payload }),
   });
 }
 

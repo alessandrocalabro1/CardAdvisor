@@ -5,8 +5,43 @@ import * as offerService from '../services/offerService';
 import * as snapshotService from '../services/snapshotService';
 import { generateDecisionBrief } from '../utils/decisionBrief';
 import { getWeeklyStrategyReferencesForCard } from '../services/weeklyStrategyService';
+import { performCardSearch, isGameKey, GAME_KEYS } from '../providers/cardSearch';
 
 const router = Router();
+
+// POST /api/cards/search — unified provider-aware card search
+router.post('/search', async (req, res) => {
+  try {
+    const body = req.body ?? {};
+
+    if (typeof body.query !== 'string' || body.query.trim().length < 2) {
+      return res.status(400).json({ error: 'query is required (min 2 characters)' });
+    }
+    if (!isGameKey(body.game)) {
+      return res.status(400).json({ error: `game is required (one of: ${GAME_KEYS.join(', ')})` });
+    }
+
+    let limit = 20;
+    if (body.limit !== undefined) {
+      const parsed = Number(body.limit);
+      if (!Number.isFinite(parsed) || parsed < 1) {
+        return res.status(400).json({ error: 'limit must be a positive number' });
+      }
+      limit = Math.min(Math.floor(parsed), 30);
+    }
+
+    const result = await performCardSearch({
+      query: body.query.trim(),
+      game: body.game,
+      limit,
+    });
+
+    res.json(result);
+  } catch (err: any) {
+    console.error('[cards/search] Unexpected error:', err?.message || err);
+    res.status(500).json({ error: 'Unexpected server error' });
+  }
+});
 
 // GET /api/cards
 router.get('/', async (req, res) => {

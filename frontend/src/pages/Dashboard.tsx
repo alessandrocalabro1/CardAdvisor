@@ -10,6 +10,7 @@ import {
 } from '../api/client';
 import { renderDataQualityBadge } from '../utils/transparency';
 import { formatMoney, formatDate, opportunityLabel, statusLabel } from '../utils/format';
+import CardArtwork from '../components/CardArtwork';
 
 interface DashboardProps {
   settings: { currency: string };
@@ -68,7 +69,7 @@ export default function Dashboard({ settings, onNavigateToTab, onNavigateToCard,
     const all: any[] = [];
     cards.forEach(card => {
       (card.offers || []).forEach((o: any) => {
-        all.push({ ...o, cardName: card.name, cardNumber: card.cardNumber, cardId: card.id });
+        all.push({ ...o, cardName: card.name, cardNumber: card.cardNumber, cardId: card.id, cardImageUrl: card.imageUrl });
       });
     });
     return all
@@ -247,7 +248,9 @@ export default function Dashboard({ settings, onNavigateToTab, onNavigateToCard,
                       onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
                       onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
                     >
-                      <div style={{ minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                        <CardArtwork src={o.cardImageUrl} name={o.cardName} size="thumb" style={{ width: 30, minWidth: 30 }} />
+                        <div style={{ minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
                           <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {o.cardName}
@@ -258,6 +261,7 @@ export default function Dashboard({ settings, onNavigateToTab, onNavigateToCard,
                           <span className="badge badge-neutral" style={{ fontSize: 10 }}>{o.marketplace}</span>
                           {renderDataQualityBadge(o.dataQuality)}
                           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.condition}</span>
+                        </div>
                         </div>
                       </div>
 
@@ -304,11 +308,14 @@ export default function Dashboard({ settings, onNavigateToTab, onNavigateToCard,
                     onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
                     onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
                   >
-                    <div style={{ minWidth: 0 }}>
-                      <span style={{ fontSize: 13.5, fontWeight: 500 }}>{c.name}</span>
-                      <span style={{ fontSize: 11.5, color: 'var(--text-muted)', marginLeft: 8 }}>
-                        {c.setName} · {c.cardNumber}
-                      </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                      <CardArtwork src={c.imageUrl} name={c.name} size="thumb" style={{ width: 30, minWidth: 30 }} />
+                      <div style={{ minWidth: 0 }}>
+                        <span style={{ fontSize: 13.5, fontWeight: 500 }}>{c.name}</span>
+                        <span style={{ fontSize: 11.5, color: 'var(--text-muted)', marginLeft: 8 }}>
+                          {c.setName} · {c.cardNumber}
+                        </span>
+                      </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
                       <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>{formatDate(c.createdAt)}</span>

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Scale, AlertTriangle, ExternalLink, ArrowRight, Loader2 } from 'lucide-react';
 import { apiGetCards, apiGetCardById } from '../api/client';
 import { renderDataQualityBadge } from '../utils/transparency';
+import CardArtwork from '../components/CardArtwork';
 import { currencySymbol, opportunityLabelFromScore, levelLabel } from '../utils/format';
 
 interface OfferComparatorProps {
@@ -120,11 +121,14 @@ export default function OfferComparator({ onNavigateToCard }: OfferComparatorPro
               {/* Card summary strip */}
               <div className="card" style={{ marginBottom: 20 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-                  <div style={{ minWidth: 0 }}>
-                    <h2 style={{ fontSize: 16.5, marginBottom: 3 }}>{cardDetails.name}</h2>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: 12.5 }}>
-                      {cardDetails.setName} · {cardDetails.cardNumber} · {cardDetails.rarity} · {cardDetails.language}
-                    </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
+                    <CardArtwork src={cardDetails.imageUrl} name={cardDetails.name} size="thumb" style={{ width: 40, minWidth: 40 }} />
+                    <div style={{ minWidth: 0 }}>
+                      <h2 style={{ fontSize: 16.5, marginBottom: 3 }}>{cardDetails.name}</h2>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: 12.5 }}>
+                        {cardDetails.setName} · {cardDetails.cardNumber} · {cardDetails.rarity} · {cardDetails.language}
+                      </p>
+                    </div>
                   </div>
 
                   <div style={{ display: 'flex', gap: 28 }}>
