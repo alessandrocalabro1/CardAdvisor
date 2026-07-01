@@ -1,12 +1,40 @@
 import { useState, useEffect } from 'react';
-import { 
-  CheckCircle2, XCircle, AlertCircle, RefreshCw, 
-  ShieldCheck, Play, ArrowDownWideNarrow 
+import {
+  CheckCircle2, XCircle, AlertCircle, RefreshCw,
+  ShieldCheck, Play, FileDown, CheckCircle,
 } from 'lucide-react';
-import { 
-  apiGetProviderStatuses, apiCheckProviders, 
-  apiImportCardmarketSample, apiTestPriceCharting, apiTestJustTcg 
+import {
+  apiGetProviderStatuses, apiCheckProviders,
+  apiImportCardmarketSample, apiTestPriceCharting, apiTestJustTcg,
 } from '../api/client';
+
+const PROVIDER_INFO: Record<string, { target: string; requirement: string; nextStep: string }> = {
+  PRICECHARTING: {
+    target: 'Prezzi di mercato aggregati (PriceCharting)',
+    requirement: 'PRICECHARTING_API_TOKEN nel backend (.env)',
+    nextStep: 'Configura il token sul server per prezzi reali.',
+  },
+  CARDMARKET_EXPORT: {
+    target: 'Listini del marketplace Cardmarket (EU)',
+    requirement: 'File di export o CARDMARKET_EXPORT_PATH',
+    nextStep: 'Importa un export per aggiornare i riferimenti.',
+  },
+  JUSTTCG: {
+    target: 'Prezzi e liste di vendita alternative (JustTCG)',
+    requirement: 'JUSTTCG_API_KEY nel backend (.env)',
+    nextStep: 'Configura la chiave API sul server.',
+  },
+  OPTCG: {
+    target: 'Metadati ufficiali One Piece TCG',
+    requirement: 'Nessuno (usa dati simulati se l’URL manca)',
+    nextStep: 'Usato per la compilazione rapida delle carte.',
+  },
+  MANUAL: {
+    target: 'Inserimenti manuali',
+    requirement: 'Nessuno',
+    nextStep: 'Registra prezzi e offerte dalle pagine di dettaglio.',
+  },
+};
 
 export default function ProvidersPage() {
   const [providers, setProviders] = useState<any[]>([]);
@@ -17,6 +45,7 @@ export default function ProvidersPage() {
   const [testingProvider, setTestingProvider] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [lastCheck, setLastCheck] = useState<Date | null>(null);
 
   const fetchStatuses = async () => {
     try {
@@ -24,7 +53,7 @@ export default function ProvidersPage() {
       setProviders(data);
     } catch (err: any) {
       console.error('Error fetching provider statuses:', err);
-      setErrorMessage('Could not retrieve provider status list.');
+      setErrorMessage('Impossibile recuperare lo stato dei provider.');
     } finally {
       setLoading(false);
     }
@@ -41,9 +70,10 @@ export default function ProvidersPage() {
     try {
       const updated = await apiCheckProviders();
       setProviders(updated);
-      setSuccessMessage('Updated provider statuses successfully.');
+      setLastCheck(new Date());
+      setSuccessMessage('Stato dei provider aggiornato.');
     } catch (err: any) {
-      setErrorMessage(err.message || 'Verification scan failed.');
+      setErrorMessage(err.message || 'Verifica non riuscita.');
     } finally {
       setRefreshing(false);
     }
@@ -58,7 +88,7 @@ export default function ProvidersPage() {
       setSuccessMessage(res.message);
       fetchStatuses();
     } catch (err: any) {
-      setErrorMessage(err.message || 'Cardmarket import failed. Check if sample file exists.');
+      setErrorMessage(err.message || 'Import Cardmarket non riuscito. Verifica che il file di esempio esista.');
     } finally {
       setImporting(false);
     }
@@ -78,7 +108,7 @@ export default function ProvidersPage() {
       }
       setTestResults(prev => ({ ...prev, [name]: res }));
     } catch (err: any) {
-      setErrorMessage(`Test query failed for ${name}: ${err.message}`);
+      setErrorMessage(`Test non riuscito per ${name}: ${err.message}`);
     } finally {
       setTestingProvider(null);
     }
@@ -87,169 +117,155 @@ export default function ProvidersPage() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'AVAILABLE':
-        return <CheckCircle2 size={20} color="var(--color-opportunity)" />;
+        return <CheckCircle2 size={18} color="var(--positive)" />;
       case 'MOCKED':
-        return <ShieldCheck size={20} color="var(--color-interesting)" />;
+        return <ShieldCheck size={18} color="var(--info)" />;
       case 'NOT_CONFIGURED':
-        return <AlertCircle size={20} color="var(--color-watch)" />;
+        return <AlertCircle size={18} color="var(--warn)" />;
       default:
-        return <XCircle size={20} color="var(--color-avoid)" />;
+        return <XCircle size={18} color="var(--negative)" />;
     }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'AVAILABLE':
-        return <span className="badge badge-opportunity">Available</span>;
+        return <span className="badge badge-positive">Attivo</span>;
       case 'MOCKED':
-        return <span className="badge badge-interesting">Mock Active</span>;
+        return <span className="badge badge-info">Simulato</span>;
       case 'NOT_CONFIGURED':
-        return <span className="badge badge-watch">Unconfigured</span>;
+        return <span className="badge badge-warn">Non configurato</span>;
       default:
-        return <span className="badge badge-avoid">Error</span>;
+        return <span className="badge badge-negative">Errore</span>;
     }
   };
 
   if (loading) {
-    return <div style={{ color: 'var(--text-secondary)' }}>Loading provider status...</div>;
+    return (
+      <div className="page-wrap" style={{ color: 'var(--text-secondary)', display: 'flex', justifyContent: 'center', paddingTop: 60 }}>
+        Caricamento dello stato dei provider…
+      </div>
+    );
   }
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+    <div className="page-wrap" style={{ maxWidth: 960 }}>
       <div className="page-header">
         <div className="page-title-group">
-          <h1>Data Providers</h1>
-          <p>Manage API status, check tokens, and import reference CSV sheets</p>
+          <h1>Fonti dati</h1>
+          <p>
+            Stato dei provider di prezzo e import di riferimento
+            {lastCheck && ` · ultima verifica ${lastCheck.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`}
+          </p>
         </div>
-        <button 
-          className="btn btn-secondary" 
-          onClick={handleCheckStatuses} 
-          disabled={refreshing}
-        >
-          <RefreshCw size={16} className={refreshing ? 'spin-anim' : ''} />
-          {refreshing ? 'Scanning...' : 'Scan Connections'}
+        <button className="btn btn-secondary" onClick={handleCheckStatuses} disabled={refreshing}>
+          <RefreshCw size={14} className={refreshing ? 'spin-anim' : ''} />
+          {refreshing ? 'Verifica…' : 'Verifica connessioni'}
         </button>
       </div>
 
       {successMessage && (
-        <div className="card" style={{ borderLeft: '4px solid var(--color-opportunity)', padding: '16px', marginBottom: '24px', backgroundColor: 'rgba(16,185,129,0.06)' }}>
-          <p style={{ color: 'white' }}>{successMessage}</p>
+        <div className="notice notice-success" style={{ marginBottom: 20 }} role="status">
+          <CheckCircle size={14} />
+          <span>{successMessage}</span>
         </div>
       )}
 
       {errorMessage && (
-        <div className="card" style={{ borderLeft: '4px solid var(--color-avoid)', padding: '16px', marginBottom: '24px', backgroundColor: 'rgba(239,68,68,0.06)' }}>
-          <p style={{ color: 'white' }}>{errorMessage}</p>
+        <div className="notice notice-error" style={{ marginBottom: 20 }} role="alert">
+          <AlertCircle size={14} />
+          <span>{errorMessage}</span>
         </div>
       )}
 
-      {/* Cardmarket Import Section */}
-      <div className="card" style={{ marginBottom: '32px', background: 'radial-gradient(circle at 0% 100%, rgba(99,102,241,0.06) 0%, transparent 60%)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
-          <div>
-            <h3 style={{ fontSize: '18px', color: 'white', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <ArrowDownWideNarrow size={20} color="var(--accent-primary)" /> Cardmarket Public Export Loader
-            </h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', maxWidth: '650px' }}>
-              Import daily pricing lists using the public export formats. The app maps these references to your watched card catalogue automatically to compute estimated fair ranges.
+      {/* Cardmarket import */}
+      <div className="card" style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+          <div style={{ minWidth: 0 }}>
+            <div className="section-title" style={{ marginBottom: 6 }}>
+              <FileDown size={13} /> Import export Cardmarket
+            </div>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 12.5, maxWidth: 560, lineHeight: 1.55 }}>
+              Importa i listini pubblici di Cardmarket: i riferimenti vengono associati automaticamente alle carte in watchlist per calcolare le fasce eque stimate.
             </p>
           </div>
-          <button 
-            className="btn btn-primary" 
-            onClick={handleImportSample} 
-            disabled={importing}
-          >
-            {importing ? 'Importing...' : 'Load Sample export.csv'}
+          <button className="btn btn-primary" onClick={handleImportSample} disabled={importing}>
+            {importing ? 'Import in corso…' : 'Carica export di esempio'}
           </button>
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* Providers list */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {providers.map(p => {
           const testRes = testResults[p.providerName];
+          const info = PROVIDER_INFO[p.providerName];
           return (
-            <div key={p.id || p.providerName} className="card" style={{ padding: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
-                
-                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                  <div style={{ 
-                    width: '44px', height: '44px', borderRadius: '8px', 
-                    backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-color)',
-                    display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center'
+            <div key={p.id || p.providerName} className="card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 14 }}>
+                <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', minWidth: 0 }}>
+                  <div style={{
+                    width: 38, height: 38, borderRadius: 'var(--radius-sm)', flexShrink: 0,
+                    backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                     {getStatusIcon(p.status)}
                   </div>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-                      <h3 style={{ color: 'white', fontSize: '18px' }}>{p.providerName}</h3>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3, flexWrap: 'wrap' }}>
+                      <h3 style={{ fontSize: 14.5 }}>{p.providerName}</h3>
                       {getStatusBadge(p.status)}
                     </div>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>{p.message || 'No description available.'}</p>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: 12.5 }}>{p.message || info?.target || 'Nessuna descrizione disponibile.'}</p>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
                   {(p.providerName === 'PRICECHARTING' || p.providerName === 'JUSTTCG') && (
-                    <button 
-                      className="btn btn-secondary" 
+                    <button
+                      className="btn btn-secondary btn-sm"
                       onClick={() => handleTestProvider(p.providerName)}
                       disabled={testingProvider === p.providerName}
                     >
-                      <Play size={14} />
-                      {testingProvider === p.providerName ? 'Testing...' : 'Test Connection'}
+                      <Play size={12} />
+                      {testingProvider === p.providerName ? 'Test in corso…' : 'Testa connessione'}
                     </button>
                   )}
-                  {p.providerName === 'OPTCG' && (
-                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Auto-resolves meta</span>
-                  )}
-                  {p.providerName === 'MANUAL' && (
-                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Local inputs only</span>
-                  )}
-                </div>
-
-              </div>
-
-              {/* Requirement details */}
-              <div style={{ 
-                marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.03)',
-                display: 'flex', gap: '24px', flexWrap: 'wrap', fontSize: '13px' 
-              }}>
-                <div>
-                  <span style={{ color: 'var(--text-muted)' }}>Target Platform: </span>
-                  <span style={{ color: 'var(--text-secondary)', fontWeight: '500' }}>
-                    {p.providerName === 'PRICECHARTING' && 'PriceCharting aggregated market prices'}
-                    {p.providerName === 'CARDMARKET_EXPORT' && 'Cardmarket EU marketplace sheets'}
-                    {p.providerName === 'JUSTTCG' && 'Alternative pricing/sold lists'}
-                    {p.providerName === 'OPTCG' && 'One Piece TCG official metadata'}
-                    {p.providerName === 'MANUAL' && 'Manual private logs'}
-                  </span>
-                </div>
-                <div>
-                  <span style={{ color: 'var(--text-muted)' }}>Requirements: </span>
-                  <span style={{ color: 'var(--text-secondary)', fontWeight: '500' }}>
-                    {p.providerName === 'PRICECHARTING' && 'PRICECHARTING_API_TOKEN (.env)'}
-                    {p.providerName === 'JUSTTCG' && 'JUSTTCG_API_KEY (.env)'}
-                    {p.providerName === 'CARDMARKET_EXPORT' && 'sample export file or CARDMARKET_EXPORT_PATH'}
-                    {p.providerName === 'OPTCG' && 'None (Uses mock if URL missing)'}
-                    {p.providerName === 'MANUAL' && 'None'}
-                  </span>
                 </div>
               </div>
 
-              {/* Display Test query results */}
-              {testRes && (
-                <div style={{ 
-                  marginTop: '16px', padding: '16px', borderRadius: '6px', 
-                  backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-color)',
-                  fontFamily: 'monospace', fontSize: '13px'
+              {info && (
+                <div style={{
+                  marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--border)',
+                  display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10, fontSize: 12,
                 }}>
-                  <h4 style={{ color: 'white', marginBottom: '8px', fontSize: '14px', fontFamily: 'var(--font-sans)' }}>Connection Check Output:</h4>
-                  <pre style={{ overflowX: 'auto', whiteSpace: 'pre-wrap', color: 'var(--text-secondary)' }}>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Fonte: </span>
+                    <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{info.target}</span>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Requisiti: </span>
+                    <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{info.requirement}</span>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Prossimo passo: </span>
+                    <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{info.nextStep}</span>
+                  </div>
+                </div>
+              )}
+
+              {testRes && (
+                <div style={{
+                  marginTop: 14, padding: 14, borderRadius: 'var(--radius-sm)',
+                  backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)',
+                  fontSize: 12,
+                }}>
+                  <div className="section-title" style={{ marginBottom: 8 }}>Risultato del test</div>
+                  <pre style={{ overflowX: 'auto', whiteSpace: 'pre-wrap', color: 'var(--text-secondary)', fontFamily: 'ui-monospace, monospace', fontSize: 11.5, lineHeight: 1.5 }}>
                     {JSON.stringify(testRes, null, 2)}
                   </pre>
                 </div>
               )}
-
             </div>
           );
         })}

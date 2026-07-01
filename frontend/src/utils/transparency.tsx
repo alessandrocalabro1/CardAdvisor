@@ -1,36 +1,40 @@
+/**
+ * Badge that shows the origin/quality of a data point,
+ * so estimates are always transparent about their source.
+ */
 export function renderDataQualityBadge(dataQuality: string | undefined | null) {
   if (!dataQuality) return null;
-  
-  let label = 'Real Provider';
-  let className = 'badge-transparency-real';
+
+  let label: string;
+  let className: string;
 
   switch (dataQuality) {
     case 'REAL_PROVIDER':
-      label = 'Real Provider';
+      label = 'Provider reale';
       className = 'badge-transparency-real';
       break;
     case 'AGGREGATED_PROVIDER':
-      label = 'Aggregated Provider';
+      label = 'Provider aggregato';
       className = 'badge-transparency-aggregated';
       break;
     case 'PUBLIC_EXPORT':
-      label = 'Public Export';
+      label = 'Export pubblico';
       className = 'badge-transparency-export';
       break;
     case 'MANUAL':
-      label = 'Manual';
+      label = 'Manuale';
       className = 'badge-transparency-manual';
       break;
     case 'SEED_SAMPLE':
-      label = 'Seed Sample';
+      label = 'Dato di esempio';
       className = 'badge-transparency-seed';
       break;
     case 'MOCK_TEST':
-      label = 'Mock Test';
+      label = 'Dato simulato';
       className = 'badge-transparency-mock';
       break;
     case 'NOT_CONFIGURED':
-      label = 'Unconfigured';
+      label = 'Non configurato';
       className = 'badge-transparency-notconfigured';
       break;
     default:
@@ -38,17 +42,7 @@ export function renderDataQualityBadge(dataQuality: string | undefined | null) {
   }
 
   return (
-    <span 
-      className={`badge ${className}`} 
-      style={{ 
-        marginLeft: '6px', 
-        fontSize: '10px', 
-        padding: '2px 6px',
-        display: 'inline-flex',
-        alignItems: 'center',
-        verticalAlign: 'middle'
-      }}
-    >
+    <span className={`badge ${className}`} style={{ fontSize: 10, padding: '1px 7px' }}>
       {label}
     </span>
   );

@@ -2,64 +2,63 @@ import { ShieldAlert, BookOpen, Scale, Eye } from 'lucide-react';
 
 export default function DisclaimerPage() {
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+    <div className="page-wrap" style={{ maxWidth: 760 }}>
       <div className="page-header">
         <div className="page-title-group">
-          <h1>Product Disclaimer & Guidelines</h1>
-          <p>Important safety information and product positioning details for CardAdvisor</p>
+          <h1>Disclaimer</h1>
+          <p>Posizionamento del prodotto e linee guida per un uso consapevole</p>
         </div>
       </div>
 
-      <div className="card" style={{ marginBottom: '24px', borderLeft: '4px solid var(--color-watch)' }}>
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-          <ShieldAlert size={36} color="var(--color-watch)" style={{ flexShrink: 0 }} />
+      <div className="card" style={{ marginBottom: 16, borderColor: 'var(--warn-border)' }}>
+        <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+          <ShieldAlert size={26} color="var(--warn)" style={{ flexShrink: 0, marginTop: 2 }} />
           <div>
-            <h3 style={{ fontSize: '18px', color: 'white', marginBottom: '8px' }}>Not Financial Advice Notice</h3>
-            <p style={{ color: 'var(--text-primary)', fontSize: '15px', marginBottom: '12px' }}>
-              <strong>CardAdvisor is a tracking, comparison, and decision-support tool for collectibles.</strong> It does not provide financial advice and does not guarantee future profits. All evaluations, including "estimated fair ranges", "market signals", and "opportunity scores", are generated algorithmically based on public exports, active seller listings, and user inputs. These figures should only be used as general indicators.
+            <h3 style={{ fontSize: 15.5, marginBottom: 8 }}>Non è consulenza finanziaria</h3>
+            <p style={{ fontSize: 13.5, marginBottom: 10, lineHeight: 1.6 }}>
+              <strong>CardAdvisor è uno strumento di tracciamento, confronto e supporto alle decisioni per collezionabili.</strong>{' '}
+              Non fornisce consulenza finanziaria e non garantisce alcun rendimento. Le valutazioni — fasce eque stimate, segnali di mercato, punteggi di opportunità — sono calcolate algoritmicamente a partire da export pubblici, annunci attivi e inserimenti manuali, e vanno usate solo come indicatori generali.
             </p>
-            <p style={{ color: 'var(--text-secondary)' }}>
-              Collectible card markets are highly volatile. Card values can swing drastically based on game meta updates, card reprints, and tournament outcomes. Never spend money you cannot afford to lose on collectible assets.
+            <p style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.6 }}>
+              Il mercato delle carte collezionabili è molto volatile: i valori possono variare drasticamente per cambi di meta, ristampe ed esiti dei tornei. Non spendere mai denaro che non puoi permetterti di perdere.
             </p>
           </div>
         </div>
       </div>
 
-      <div className="grid-cols-2" style={{ marginBottom: '24px' }}>
+      <div className="grid-cols-2" style={{ marginBottom: 16 }}>
         <div className="card">
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '16px' }}>
-            <BookOpen size={20} color="var(--accent-primary)" />
-            <h4 style={{ color: 'white', fontSize: '16px' }}>Verify Before Buying</h4>
+          <div className="section-title">
+            <BookOpen size={13} /> Verifica prima di acquistare
           </div>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
-            Always verify card authenticity, condition, language, and the reliability of the seller before committing to a purchase. Look closely at back photos, holographic patterns, and text kerning, especially on high-value parallel arts.
+          <p style={{ color: 'var(--text-secondary)', fontSize: 12.5, lineHeight: 1.6 }}>
+            Controlla sempre autenticità, condizione, lingua e affidabilità del venditore prima di ogni acquisto. Osserva foto del retro, pattern olografici e kerning del testo, soprattutto sulle alt-art di alto valore.
           </p>
         </div>
 
         <div className="card">
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '16px' }}>
-            <Scale size={20} color="var(--accent-primary)" />
-            <h4 style={{ color: 'white', fontSize: '16px' }}>Fair Estimation Bounds</h4>
+          <div className="section-title">
+            <Scale size={13} /> Limiti delle stime
           </div>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
-            Estimated fair ranges are calculated using available API data feeds and manual entries. These figures may be outdated, incomplete, or affected by skew from outlier listings. Active asking prices on platforms are not a guaranteed indication of real transaction values.
+          <p style={{ color: 'var(--text-secondary)', fontSize: 12.5, lineHeight: 1.6 }}>
+            Le fasce eque stimate derivano da feed disponibili e inserimenti manuali: possono essere datate, incomplete o distorte da annunci anomali. I prezzi richiesti sugli annunci non indicano necessariamente valori reali di transazione.
           </p>
         </div>
       </div>
 
       <div className="card">
-        <h3 style={{ fontSize: '18px', color: 'white', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Eye size={20} /> Essential Cautious Trading Practices
-        </h3>
-        <ul style={{ paddingLeft: '20px', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div className="section-title">
+          <Eye size={13} /> Pratiche di acquisto prudenti
+        </div>
+        <ul style={{ paddingLeft: 18, color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: 10, fontSize: 12.5, lineHeight: 1.6 }}>
           <li>
-            <strong>Avoid Impulse Purchases:</strong> Use the watchlist and set target alerts rather than buying immediately during hype cycles.
+            <strong style={{ color: 'var(--text-primary)' }}>Evita gli acquisti d’impulso:</strong> usa la watchlist e gli avvisi di prezzo invece di comprare durante i cicli di hype.
           </li>
           <li>
-            <strong>Evaluate Seller Fees:</strong> Standard comparison pages often omit platform transaction fees, payment processing fees, and localized customs shipping rates. Calculate your true total cost before comparing listings.
+            <strong style={{ color: 'var(--text-primary)' }}>Considera tutte le commissioni:</strong> molti confronti omettono commissioni di piattaforma, costi di pagamento e dogana. Calcola il costo totale reale prima di confrontare le offerte.
           </li>
           <li>
-            <strong>Inspect Graded Cards carefully:</strong> Be sure to verify slab certification numbers directly on PSA, BGS, or CGC lookup engines to prevent purchasing cloned labels or counterfeit casings.
+            <strong style={{ color: 'var(--text-primary)' }}>Controlla le carte gradate:</strong> verifica i numeri di certificazione degli slab direttamente su PSA, BGS o CGC per evitare etichette clonate o custodie contraffatte.
           </li>
         </ul>
       </div>

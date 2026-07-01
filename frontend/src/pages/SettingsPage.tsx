@@ -1,10 +1,6 @@
 import { useRef, useState } from 'react';
-import { 
-  Settings, Download, Upload, FileSpreadsheet, FileJson
-} from 'lucide-react';
-import { 
-  JSON_EXPORT_URL, CSV_EXPORT_URL, apiImportBackup 
-} from '../api/client';
+import { Settings, Download, Upload, FileSpreadsheet, FileJson, CheckCircle, AlertCircle } from 'lucide-react';
+import { JSON_EXPORT_URL, CSV_EXPORT_URL, apiImportBackup } from '../api/client';
 
 interface SettingsPageProps {
   settings: {
@@ -23,16 +19,12 @@ export default function SettingsPage({ settings, onUpdateSettings }: SettingsPag
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const handleCurrencyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onUpdateSettings({ ...settings, currency: e.target.value });
+  const handleSelectChange = (key: string, val: string) => {
+    onUpdateSettings({ ...settings, [key]: val });
   };
 
   const handleToggleDisclaimer = (e: React.ChangeEvent<HTMLInputElement>) => {
     onUpdateSettings({ ...settings, showDisclaimer: e.target.checked });
-  };
-
-  const handleSelectChange = (key: string, val: string) => {
-    onUpdateSettings({ ...settings, [key]: val });
   };
 
   const handleImportClick = () => {
@@ -54,173 +46,153 @@ export default function SettingsPage({ settings, onUpdateSettings }: SettingsPag
         const backupData = JSON.parse(text);
 
         const res = await apiImportBackup(backupData);
-        setSuccessMsg(res.message || 'Backup imported successfully. Refreshing database...');
-        // Clear value to allow re-upload
+        setSuccessMsg(res.message || 'Backup importato correttamente.');
         if (fileInputRef.current) fileInputRef.current.value = '';
       } catch (err: any) {
-        setErrorMsg(`Failed to import backup: ${err.message}`);
+        setErrorMsg(`Import del backup non riuscito: ${err.message}`);
       } finally {
         setImporting(false);
       }
     };
     reader.onerror = () => {
-      setErrorMsg('Error reading the backup file.');
+      setErrorMsg('Errore nella lettura del file di backup.');
       setImporting(false);
     };
     reader.readAsText(file);
   };
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+    <div className="page-wrap" style={{ maxWidth: 760 }}>
       <div className="page-header">
         <div className="page-title-group">
-          <h1>Settings & Backups</h1>
-          <p>Configure currencies, default filters, and database import/export options</p>
+          <h1>Impostazioni</h1>
+          <p>Preferenze dell’applicazione, backup e portabilità dei dati</p>
         </div>
       </div>
 
       {successMsg && (
-        <div className="card" style={{ borderLeft: '4px solid var(--color-opportunity)', padding: '16px', marginBottom: '24px', backgroundColor: 'rgba(16,185,129,0.06)' }}>
-          <p style={{ color: 'white' }}>{successMsg}</p>
+        <div className="notice notice-success" style={{ marginBottom: 20 }} role="status">
+          <CheckCircle size={14} />
+          <span>{successMsg}</span>
         </div>
       )}
 
       {errorMsg && (
-        <div className="card" style={{ borderLeft: '4px solid var(--color-avoid)', padding: '16px', marginBottom: '24px', backgroundColor: 'rgba(239,68,68,0.06)' }}>
-          <p style={{ color: 'white' }}>{errorMsg}</p>
+        <div className="notice notice-error" style={{ marginBottom: 20 }} role="alert">
+          <AlertCircle size={14} />
+          <span>{errorMsg}</span>
         </div>
       )}
 
-      {/* Configuration Section */}
-      <div className="card" style={{ marginBottom: '32px' }}>
-        <h3 style={{ fontSize: '18px', color: 'white', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Settings size={20} color="var(--accent-primary)" /> Application Preferences
-        </h3>
+      {/* Preferences */}
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div className="section-title">
+          <Settings size={13} /> Preferenze
+        </div>
 
         <div className="grid-cols-2">
-          
           <div className="form-group">
-            <label>Preferred Base Currency</label>
-            <select 
-              className="form-control" 
-              value={settings.currency} 
-              onChange={handleCurrencyChange}
+            <label>Valuta di riferimento</label>
+            <select
+              className="form-control"
+              value={settings.currency}
+              onChange={(e) => handleSelectChange('currency', e.target.value)}
             >
               <option value="EUR">Euro (€)</option>
-              <option value="USD">US Dollar ($)</option>
+              <option value="USD">Dollaro USA ($)</option>
             </select>
-            <p style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
-              PriceCharting and JustTCG USD prices will convert automatically to this currency.
-            </p>
+            <span className="form-hint">
+              I prezzi in USD dei provider vengono convertiti automaticamente.
+            </span>
           </div>
 
           <div className="form-group">
-            <label>Default Card Game</label>
-            <select 
-              className="form-control" 
-              value={settings.defaultGame} 
+            <label>Gioco predefinito</label>
+            <select
+              className="form-control"
+              value={settings.defaultGame}
               onChange={(e) => handleSelectChange('defaultGame', e.target.value)}
             >
               <option value="One Piece">One Piece TCG</option>
-              <option value="Pokémon">Pokémon TCG (Future)</option>
-              <option value="Yu-Gi-Oh!">Yu-Gi-Oh! (Future)</option>
-              <option value="Lorcana">Lorcana (Future)</option>
+              <option value="Pokémon">Pokémon TCG</option>
+              <option value="Yu-Gi-Oh!">Yu-Gi-Oh!</option>
+              <option value="Lorcana">Lorcana</option>
             </select>
           </div>
 
           <div className="form-group">
-            <label>Default Card Language</label>
-            <select 
-              className="form-control" 
-              value={settings.defaultLanguage} 
+            <label>Lingua carte predefinita</label>
+            <select
+              className="form-control"
+              value={settings.defaultLanguage}
               onChange={(e) => handleSelectChange('defaultLanguage', e.target.value)}
             >
-              <option value="English">English</option>
-              <option value="Japanese">Japanese</option>
-              <option value="French">French</option>
-              <option value="German">German</option>
+              <option value="English">Inglese</option>
+              <option value="Japanese">Giapponese</option>
+              <option value="French">Francese</option>
+              <option value="German">Tedesco</option>
             </select>
           </div>
 
           <div className="form-group">
-            <label>Preferred Listing Marketplace</label>
-            <select 
-              className="form-control" 
-              value={settings.defaultMarketplace} 
+            <label>Marketplace preferito</label>
+            <select
+              className="form-control"
+              value={settings.defaultMarketplace}
               onChange={(e) => handleSelectChange('defaultMarketplace', e.target.value)}
             >
               <option value="CARDMARKET">Cardmarket</option>
               <option value="VINTED">Vinted (EU)</option>
               <option value="FACEBOOK">Facebook Marketplace</option>
               <option value="EBAY">eBay</option>
-              <option value="TELEGRAM">Telegram Group chats</option>
+              <option value="TELEGRAM">Gruppi Telegram</option>
             </select>
           </div>
-
         </div>
 
-        <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <input 
-            type="checkbox" 
-            id="toggle-disc"
+        <label style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, cursor: 'pointer' }}>
+          <input
+            type="checkbox"
             checked={settings.showDisclaimer}
             onChange={handleToggleDisclaimer}
-            style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+            style={{ width: 15, height: 15, cursor: 'pointer' }}
           />
-          <label htmlFor="toggle-disc" style={{ fontSize: '14px', color: 'var(--text-primary)', cursor: 'pointer' }}>
-            Show short warning banner on pricing tools (recommended)
-          </label>
-        </div>
+          Mostra l’avvertenza sui limiti delle stime nelle pagine di prezzo (consigliato)
+        </label>
       </div>
 
-      {/* Database Backup Section */}
+      {/* Backups */}
       <div className="card">
-        <h3 style={{ fontSize: '18px', color: 'white', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Download size={20} color="var(--accent-primary)" /> Backups & Data Portability
-        </h3>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '20px' }}>
-          Avoid lock-in by downloading full JSON backups of all models, or export your current portfolio ledger to a CSV sheet for external tracking.
+        <div className="section-title">
+          <Download size={13} /> Backup e portabilità
+        </div>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 12.5, marginBottom: 18, lineHeight: 1.55 }}>
+          Scarica un backup JSON completo di tutti i dati, oppure esporta il portafoglio in CSV per tracciamenti esterni. Nessun vincolo: i tuoi dati restano tuoi.
         </p>
 
-        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-          
-          <a 
-            href={JSON_EXPORT_URL} 
-            className="btn btn-secondary"
-            style={{ textDecoration: 'none', color: 'var(--text-primary)' }}
-            download
-          >
-            <FileJson size={16} />
-            Export Database Backup
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <a href={JSON_EXPORT_URL} className="btn btn-secondary" download>
+            <FileJson size={15} />
+            Backup JSON
           </a>
 
-          <a 
-            href={CSV_EXPORT_URL} 
-            className="btn btn-secondary"
-            style={{ textDecoration: 'none', color: 'var(--text-primary)' }}
-            download
-          >
-            <FileSpreadsheet size={16} />
-            Export Portfolio CSV
+          <a href={CSV_EXPORT_URL} className="btn btn-secondary" download>
+            <FileSpreadsheet size={15} />
+            Portafoglio CSV
           </a>
 
-          <button 
-            className="btn btn-primary" 
-            onClick={handleImportClick}
-            disabled={importing}
-          >
-            <Upload size={16} />
-            {importing ? 'Importing...' : 'Restore JSON Backup'}
+          <button className="btn btn-primary" onClick={handleImportClick} disabled={importing}>
+            <Upload size={15} />
+            {importing ? 'Import in corso…' : 'Ripristina backup JSON'}
           </button>
 
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileChange} 
-            style={{ display: 'none' }} 
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            style={{ display: 'none' }}
             accept=".json"
           />
-
         </div>
       </div>
     </div>

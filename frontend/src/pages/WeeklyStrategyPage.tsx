@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
-import { 
-  BookOpen, Plus, Calendar, AlertTriangle, 
-  Trash2, Edit3, Loader2, ShieldAlert, ArrowRight
+import {
+  BookOpen, Plus, Calendar, AlertTriangle,
+  Trash2, Edit3, Loader2, ShieldAlert, ArrowRight,
 } from 'lucide-react';
-import { 
-  apiGetWeeklyStrategies, 
-  apiCreateWeeklyStrategy, apiUpdateWeeklyStrategy, 
-  apiDeleteWeeklyStrategy, apiGetCards 
+import {
+  apiGetWeeklyStrategies,
+  apiCreateWeeklyStrategy, apiUpdateWeeklyStrategy,
+  apiDeleteWeeklyStrategy, apiGetCards,
 } from '../api/client';
+import { formatDate } from '../utils/format';
 
 interface WeeklyStrategyPageProps {
   onNavigateToCard: (id: string) => void;
@@ -15,23 +16,21 @@ interface WeeklyStrategyPageProps {
   onClearPreselectedStrategyId?: () => void;
 }
 
-export default function WeeklyStrategyPage({ 
-  onNavigateToCard, 
-  preselectedStrategyId, 
-  onClearPreselectedStrategyId 
+export default function WeeklyStrategyPage({
+  onNavigateToCard,
+  preselectedStrategyId,
+  onClearPreselectedStrategyId,
 }: WeeklyStrategyPageProps) {
   const [strategies, setStrategies] = useState<any[]>([]);
   const [selectedStrategy, setSelectedStrategy] = useState<any | null>(null);
   const [cards, setCards] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // Form modal state
+
   const [showForm, setShowForm] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Form fields state
   const [formFields, setFormFields] = useState({
     id: '',
     title: '',
@@ -43,7 +42,7 @@ export default function WeeklyStrategyPage({
     buyZoneNotes: '',
     sellZoneNotes: '',
     riskNotes: '',
-    selectedCardIds: [] as string[]
+    selectedCardIds: [] as string[],
   });
 
   const fetchData = async () => {
@@ -51,7 +50,7 @@ export default function WeeklyStrategyPage({
       setLoading(true);
       const list = await apiGetWeeklyStrategies();
       setStrategies(list);
-      
+
       const allCards = await apiGetCards();
       setCards(allCards);
 
@@ -60,9 +59,7 @@ export default function WeeklyStrategyPage({
           const match = list.find(s => s.id === preselectedStrategyId);
           if (match) {
             setSelectedStrategy(match);
-            if (onClearPreselectedStrategyId) {
-              onClearPreselectedStrategyId();
-            }
+            onClearPreselectedStrategyId?.();
             return;
           }
         }
@@ -79,6 +76,7 @@ export default function WeeklyStrategyPage({
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -86,22 +84,17 @@ export default function WeeklyStrategyPage({
       const match = strategies.find(s => s.id === preselectedStrategyId);
       if (match) {
         setSelectedStrategy(match);
-        if (onClearPreselectedStrategyId) {
-          onClearPreselectedStrategyId();
-        }
+        onClearPreselectedStrategyId?.();
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preselectedStrategyId, strategies]);
-
-  const handleSelectStrategy = (s: any) => {
-    setSelectedStrategy(s);
-  };
 
   const handleOpenCreate = () => {
     setEditMode(false);
     setFormFields({
       id: '',
-      title: 'Weekly Strategy Outlook',
+      title: 'Nota strategica settimanale',
       weekStartDate: new Date().toISOString().split('T')[0],
       weekEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       marketSummary: '',
@@ -110,7 +103,7 @@ export default function WeeklyStrategyPage({
       buyZoneNotes: '',
       sellZoneNotes: '',
       riskNotes: '',
-      selectedCardIds: []
+      selectedCardIds: [],
     });
     setFormError('');
     setShowForm(true);
@@ -136,19 +129,19 @@ export default function WeeklyStrategyPage({
       buyZoneNotes: s.buyZoneNotes,
       sellZoneNotes: s.sellZoneNotes,
       riskNotes: s.riskNotes,
-      selectedCardIds: cardsIds
+      selectedCardIds: cardsIds,
     });
     setFormError('');
     setShowForm(true);
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete these strategy notes?')) return;
+    if (!window.confirm('Eliminare questa nota strategica?')) return;
     try {
       await apiDeleteWeeklyStrategy(id);
       await fetchData();
     } catch (err: any) {
-      alert(`Delete failed: ${err.message}`);
+      alert(`Eliminazione non riuscita: ${err.message}`);
     }
   };
 
@@ -179,13 +172,12 @@ export default function WeeklyStrategyPage({
         buyZoneNotes: formFields.buyZoneNotes,
         sellZoneNotes: formFields.sellZoneNotes,
         riskNotes: formFields.riskNotes,
-        relatedCardIdsJson: JSON.stringify(formFields.selectedCardIds)
+        relatedCardIdsJson: JSON.stringify(formFields.selectedCardIds),
       };
 
       if (editMode) {
         const updated = await apiUpdateWeeklyStrategy(formFields.id, payload);
         setShowForm(false);
-        // Refresh strategies and select the updated one
         const list = await apiGetWeeklyStrategies();
         setStrategies(list);
         const match = list.find(s => s.id === updated.id);
@@ -193,39 +185,33 @@ export default function WeeklyStrategyPage({
       } else {
         const created = await apiCreateWeeklyStrategy(payload);
         setShowForm(false);
-        // Refresh strategies and select new one
         const list = await apiGetWeeklyStrategies();
         setStrategies(list);
         const match = list.find(s => s.id === created.id);
         if (match) setSelectedStrategy(match);
       }
     } catch (err: any) {
-      setFormError(err.message || 'Operation failed');
+      setFormError(err.message || 'Operazione non riuscita');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const formatDateString = (d: string) => {
-    return new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
-  // Get parsed list of related cards
   const getRelatedCards = (relatedIdsStr: string) => {
     if (!relatedIdsStr) return [];
     try {
       const ids: string[] = JSON.parse(relatedIdsStr);
       return cards.filter(c => ids.includes(c.id));
-    } catch (e) {
+    } catch {
       return [];
     }
   };
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px', color: 'var(--text-secondary)' }}>
-        <Loader2 className="spin-anim" size={24} style={{ marginRight: '8px' }} />
-        Loading weekly strategies...
+      <div className="page-wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300, color: 'var(--text-secondary)', gap: 8 }}>
+        <Loader2 className="spin-anim" size={18} />
+        Caricamento delle note strategiche…
       </div>
     );
   }
@@ -233,244 +219,235 @@ export default function WeeklyStrategyPage({
   const relatedCards = selectedStrategy ? getRelatedCards(selectedStrategy.relatedCardIdsJson) : [];
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-      
+    <div className="page-wrap">
       {/* Header */}
       <div className="page-header">
         <div className="page-title-group">
-          <h1>Weekly Strategy Notes</h1>
-          <p>Read risk warnings, zone guidelines, and weekly market observations</p>
+          <h1>Strategia settimanale</h1>
+          <p>Note d’analisi personali: sintesi di mercato, zone da verificare, rischi</p>
         </div>
         <button className="btn btn-primary" onClick={handleOpenCreate}>
-          <Plus size={16} /> Publish Observation Notes
+          <Plus size={15} /> Nuova nota
         </button>
       </div>
 
-      {/* Cautious Disclaimer Banner */}
-      <div className="card" style={{ 
-        borderLeft: '4px solid var(--color-watch)', padding: '14px 20px', 
-        marginBottom: '32px', backgroundColor: 'rgba(245,158,11,0.05)', fontSize: '13px'
-      }}>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <ShieldAlert size={16} color="var(--color-watch)" style={{ flexShrink: 0 }} />
-          <span style={{ color: 'var(--text-secondary)' }}>
-            <strong>Risk warning disclaimer:</strong> These are personal strategy notes for collectible tracking and do not represent financial advice. Never guarantee profits.
-          </span>
-        </div>
+      <div className="notice notice-warn" style={{ marginBottom: 24 }}>
+        <ShieldAlert size={14} />
+        <span>
+          Note personali di monitoraggio, non consulenza finanziaria. Nessuna garanzia di rendimento.
+        </span>
       </div>
 
-      <div className="card-detail-layout">
-        
-        {/* Left Side: Historical List */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <h3 style={{ color: 'white', fontSize: '16px', marginBottom: '4px' }}>Historical Outlooks</h3>
-          
+      <div style={{ display: 'grid', gridTemplateColumns: '260px minmax(0, 1fr)', gap: 24 }} className="strategy-grid">
+        {/* Left: history */}
+        <div>
+          <div className="section-title">Archivio note</div>
+
           {strategies.length === 0 ? (
-            <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>No strategy logs logged yet.</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: 12.5 }}>Nessuna nota pubblicata.</p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {strategies.map(s => {
                 const isActive = selectedStrategy?.id === s.id;
                 return (
-                  <div 
+                  <button
                     key={s.id}
-                    className={`card ${isActive ? 'active' : ''}`}
-                    onClick={() => handleSelectStrategy(s)}
-                    style={{ 
-                      padding: '16px', cursor: 'pointer', 
-                      borderColor: isActive ? 'var(--accent-primary)' : undefined,
-                      backgroundColor: isActive ? 'rgba(99,102,241,0.06)' : undefined 
+                    type="button"
+                    onClick={() => setSelectedStrategy(s)}
+                    style={{
+                      textAlign: 'left', padding: '11px 13px', cursor: 'pointer',
+                      borderRadius: 'var(--radius-sm)', fontFamily: 'inherit',
+                      border: `1px solid ${isActive ? 'var(--accent-border)' : 'var(--border)'}`,
+                      background: isActive ? 'var(--accent-bg)' : 'var(--bg-raised)',
+                      transition: 'border-color 0.15s, background-color 0.15s',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '6px' }}>
-                      <Calendar size={12} />
-                      <span>{formatDateString(s.weekStartDate)} - {formatDateString(s.weekEndDate)}</span>
-                    </div>
-                    <h4 style={{ color: isActive ? 'white' : 'var(--text-primary)', fontSize: '14px', fontWeight: '600' }}>{s.title}</h4>
-                  </div>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10.5, color: 'var(--text-muted)', marginBottom: 4 }}>
+                      <Calendar size={10} />
+                      {formatDate(s.weekStartDate)} – {formatDate(s.weekEndDate)}
+                    </span>
+                    <span style={{ display: 'block', color: 'var(--text-primary)', fontSize: 13, fontWeight: 600, lineHeight: 1.35 }}>
+                      {s.title}
+                    </span>
+                  </button>
                 );
               })}
             </div>
           )}
         </div>
 
-        {/* Right Side: Detailed Observations Panel */}
-        <div>
+        {/* Right: selected note */}
+        <div style={{ minWidth: 0 }}>
           {!selectedStrategy ? (
-            <div className="card" style={{ padding: '40px', textAlign: 'center' }}>
-              <BookOpen size={40} color="var(--text-muted)" style={{ marginBottom: '16px' }} />
-              <h3 style={{ color: 'white' }}>No Active Strategy Log Selected</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '14px', maxWidth: '350px', margin: '0 auto 16px' }}>
-                Publish weekly TCG observation notes to compute buy/sell zones and monitor risk guides.
-              </p>
+            <div className="empty-state">
+              <BookOpen />
+              <h3>Nessuna nota selezionata</h3>
+              <p>Pubblica una nota settimanale con osservazioni di mercato, zone d’acquisto da verificare e rischi.</p>
               <button className="btn btn-primary" onClick={handleOpenCreate}>
-                Publish First Strategy Note
+                <Plus size={14} /> Scrivi la prima nota
               </button>
             </div>
           ) : (
-            <div className="card" style={{ padding: '32px' }}>
-              
-              {/* Header inside detail */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '20px', marginBottom: '24px' }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>
-                    <Calendar size={14} />
-                    <span>Week start: {formatDateString(selectedStrategy.weekStartDate)} • Week end: {formatDateString(selectedStrategy.weekEndDate)}</span>
+            <div className="card" style={{ padding: 28 }}>
+              {/* Note header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 14, borderBottom: '1px solid var(--border)', paddingBottom: 18, marginBottom: 22 }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: 'var(--text-muted)', marginBottom: 5 }}>
+                    <Calendar size={12} />
+                    <span>Settimana {formatDate(selectedStrategy.weekStartDate)} – {formatDate(selectedStrategy.weekEndDate)}</span>
+                    {selectedStrategy.updatedAt && (
+                      <span>· Ultimo aggiornamento {formatDate(selectedStrategy.updatedAt)}</span>
+                    )}
                   </div>
-                  <h2 style={{ color: 'white', fontSize: '24px' }}>{selectedStrategy.title}</h2>
+                  <h2 style={{ fontSize: 19 }}>{selectedStrategy.title}</h2>
                 </div>
 
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn btn-secondary" style={{ padding: '8px 12px' }} onClick={() => handleOpenEdit(selectedStrategy)}>
-                    <Edit3 size={14} /> Edit
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button className="btn btn-ghost btn-sm" onClick={() => handleOpenEdit(selectedStrategy)}>
+                    <Edit3 size={13} /> Modifica
                   </button>
-                  <button className="btn btn-danger" style={{ padding: '8px 12px' }} onClick={() => handleDelete(selectedStrategy.id)}>
-                    <Trash2 size={14} /> Delete
+                  <button className="btn btn-ghost btn-sm" style={{ color: 'var(--negative)' }} onClick={() => handleDelete(selectedStrategy.id)}>
+                    <Trash2 size={13} /> Elimina
                   </button>
                 </div>
               </div>
 
-              {/* Strategy Content Grid */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-                
-                {/* 1. Market Summary */}
-                <div>
-                  <h3 style={{ fontSize: '15px', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px', color: 'var(--accent-secondary)' }}>Market Summary</h3>
-                  <p style={{ color: 'var(--text-primary)', fontSize: '14px', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                {/* Market summary */}
+                <section>
+                  <div className="section-title" style={{ marginBottom: 8 }}>Sintesi di mercato</div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>
                     {selectedStrategy.marketSummary}
                   </p>
-                </div>
+                </section>
 
-                {/* 2. Cards to Watch & Cards to Avoid Split */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                  
-                  <div className="card" style={{ padding: '16px', backgroundColor: 'rgba(16,185,129,0.03)', borderColor: 'rgba(16,185,129,0.12)' }}>
-                    <h4 style={{ fontSize: '13px', color: 'var(--color-opportunity)', textTransform: 'uppercase', marginBottom: '8px' }}>Cards to Watch</h4>
-                    <p style={{ color: 'var(--text-primary)', fontSize: '13px', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
-                      {selectedStrategy.cardsToWatch}
+                {/* Watch / avoid */}
+                <div className="grid-cols-2" style={{ gap: 14 }}>
+                  <div style={{ padding: 14, borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--positive-bg)', border: '1px solid var(--positive-border)' }}>
+                    <div style={{ fontSize: 11, color: 'var(--positive)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Da osservare</div>
+                    <p style={{ fontSize: 12.5, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>
+                      {selectedStrategy.cardsToWatch || '—'}
                     </p>
                   </div>
 
-                  <div className="card" style={{ padding: '16px', backgroundColor: 'rgba(239,68,68,0.03)', borderColor: 'rgba(239,68,68,0.12)' }}>
-                    <h4 style={{ fontSize: '13px', color: 'var(--color-avoid)', textTransform: 'uppercase', marginBottom: '8px' }}>Cards to Avoid</h4>
-                    <p style={{ color: 'var(--text-primary)', fontSize: '13px', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
-                      {selectedStrategy.cardsToAvoid}
+                  <div style={{ padding: 14, borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--negative-bg)', border: '1px solid var(--negative-border)' }}>
+                    <div style={{ fontSize: 11, color: 'var(--negative)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Da evitare</div>
+                    <p style={{ fontSize: 12.5, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>
+                      {selectedStrategy.cardsToAvoid || '—'}
                     </p>
                   </div>
-
                 </div>
 
-                {/* 3. Buy & Sell Zones Split */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                  
-                  <div>
-                    <h3 style={{ fontSize: '14px', color: 'white', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>Buy Zones to Verify</h3>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '13px', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
-                      {selectedStrategy.buyZoneNotes}
+                {/* Buy / sell zones */}
+                <div className="grid-cols-2" style={{ gap: 14 }}>
+                  <section>
+                    <div className="section-title" style={{ marginBottom: 8 }}>Zone d’acquisto da verificare</div>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: 12.5, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>
+                      {selectedStrategy.buyZoneNotes || '—'}
                     </p>
-                  </div>
+                  </section>
 
-                  <div>
-                    <h3 style={{ fontSize: '14px', color: 'white', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>Sell Zones to Verify</h3>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '13px', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
-                      {selectedStrategy.sellZoneNotes}
+                  <section>
+                    <div className="section-title" style={{ marginBottom: 8 }}>Zone di vendita da verificare</div>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: 12.5, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>
+                      {selectedStrategy.sellZoneNotes || '—'}
                     </p>
-                  </div>
-
+                  </section>
                 </div>
 
-                {/* 4. Risk Notes */}
-                <div className="card" style={{ padding: '16px', backgroundColor: 'rgba(245,158,11,0.03)', borderColor: 'rgba(245,158,11,0.12)' }}>
-                  <h4 style={{ fontSize: '13px', color: 'var(--color-watch)', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <AlertTriangle size={14} /> Risk Notes & Observations
-                  </h4>
-                  <p style={{ color: 'var(--text-primary)', fontSize: '13px', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
-                    {selectedStrategy.riskNotes}
-                  </p>
-                </div>
-
-                {/* 5. Related Watchlist Cards */}
-                {relatedCards.length > 0 && (
-                  <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
-                    <h3 style={{ fontSize: '14px', color: 'white', marginBottom: '12px' }}>Related Cards from watchlist</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {relatedCards.map(c => (
-                        <div 
-                          key={c.id}
-                          className="card" 
-                          onClick={() => onNavigateToCard(c.id)}
-                          style={{ 
-                            padding: '12px 16px', cursor: 'pointer', backgroundColor: 'rgba(255,255,255,0.01)',
-                            display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                          }}
-                        >
-                          <div>
-                            <span style={{ fontSize: '14px', fontWeight: '600', color: 'white' }}>{c.name}</span>
-                            <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '8px' }}>{c.setName} • {c.cardNumber}</span>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                            <span>Inspect ranges</span>
-                            <ArrowRight size={14} />
-                          </div>
-                        </div>
-                      ))}
+                {/* Risks */}
+                {selectedStrategy.riskNotes && (
+                  <div style={{ padding: 14, borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--warn-bg)', border: '1px solid var(--warn-border)' }}>
+                    <div style={{ fontSize: 11, color: 'var(--warn)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <AlertTriangle size={12} /> Rischi e osservazioni
                     </div>
+                    <p style={{ fontSize: 12.5, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>
+                      {selectedStrategy.riskNotes}
+                    </p>
                   </div>
                 )}
 
+                {/* Related cards */}
+                {relatedCards.length > 0 && (
+                  <section style={{ borderTop: '1px solid var(--border)', paddingTop: 18 }}>
+                    <div className="section-title">Carte collegate della watchlist</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {relatedCards.map(c => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => onNavigateToCard(c.id)}
+                          style={{
+                            padding: '10px 14px', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12,
+                            borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)',
+                            background: 'var(--bg-surface)', transition: 'border-color 0.15s',
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--border-strong)')}
+                          onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+                        >
+                          <span style={{ minWidth: 0 }}>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{c.name}</span>
+                            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 8 }}>{c.setName} · {c.cardNumber}</span>
+                          </span>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11.5, color: 'var(--text-secondary)', flexShrink: 0 }}>
+                            Apri dettaglio <ArrowRight size={12} />
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                )}
               </div>
-
             </div>
           )}
         </div>
-
       </div>
 
-      {/* Create/Edit Modal Form */}
+      {/* Create/Edit modal */}
       {showForm && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ width: '700px', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowForm(false); }}>
+          <div className="modal-content" style={{ width: 680 }}>
             <div className="modal-header">
-              <h2>{editMode ? 'Edit Strategy Outlook' : 'Publish Strategy Outlook'}</h2>
-              <button className="modal-close" onClick={() => setShowForm(false)}>×</button>
+              <h2>{editMode ? 'Modifica nota strategica' : 'Nuova nota strategica'}</h2>
+              <button className="modal-close" onClick={() => setShowForm(false)} aria-label="Chiudi">×</button>
             </div>
 
             {formError && (
-              <div className="card" style={{ borderLeft: '4px solid var(--color-avoid)', padding: '12px', marginBottom: '16px', backgroundColor: 'rgba(239,68,68,0.06)' }}>
-                <p style={{ color: 'white', fontSize: '13px' }}>{formError}</p>
+              <div className="notice notice-error" style={{ marginBottom: 16 }} role="alert">
+                <span>{formError}</span>
               </div>
             )}
 
             <form onSubmit={handleSubmit}>
-              
               <div className="form-group">
-                <label>Strategy Outlook Title*</label>
-                <input 
-                  type="text" 
-                  className="form-control" 
+                <label>Titolo*</label>
+                <input
+                  type="text"
+                  className="form-control"
                   value={formFields.title}
                   onChange={e => setFormFields({ ...formFields, title: e.target.value })}
-                  placeholder="e.g. Romance Dawn Alt-Art Market Outlook"
+                  placeholder="es. Outlook alt-art Romance Dawn"
                   required
                 />
               </div>
 
               <div className="grid-cols-2">
                 <div className="form-group">
-                  <label>Week Start Date*</label>
-                  <input 
-                    type="date" 
-                    className="form-control" 
+                  <label>Inizio settimana*</label>
+                  <input
+                    type="date"
+                    className="form-control"
                     value={formFields.weekStartDate}
                     onChange={e => setFormFields({ ...formFields, weekStartDate: e.target.value })}
                     required
                   />
                 </div>
                 <div className="form-group">
-                  <label>Week End Date*</label>
-                  <input 
-                    type="date" 
-                    className="form-control" 
+                  <label>Fine settimana*</label>
+                  <input
+                    type="date"
+                    className="form-control"
                     value={formFields.weekEndDate}
                     onChange={e => setFormFields({ ...formFields, weekEndDate: e.target.value })}
                     required
@@ -479,96 +456,95 @@ export default function WeeklyStrategyPage({
               </div>
 
               <div className="form-group">
-                <label>Market Summary*</label>
-                <textarea 
-                  className="form-control" 
+                <label>Sintesi di mercato*</label>
+                <textarea
+                  className="form-control"
                   rows={3}
                   value={formFields.marketSummary}
                   onChange={e => setFormFields({ ...formFields, marketSummary: e.target.value })}
-                  placeholder="Summarize general market volume observations, general card lists trends..."
+                  placeholder="Volumi, trend generali, osservazioni della settimana…"
                   required
                 />
               </div>
 
               <div className="grid-cols-2">
                 <div className="form-group">
-                  <label>Cards to Watch</label>
-                  <textarea 
-                    className="form-control" 
+                  <label>Da osservare</label>
+                  <textarea
+                    className="form-control"
                     rows={3}
                     value={formFields.cardsToWatch}
                     onChange={e => setFormFields({ ...formFields, cardsToWatch: e.target.value })}
-                    placeholder="List cards currently in a buy observation zone..."
+                    placeholder="Carte in zona di osservazione…"
                   />
                 </div>
                 <div className="form-group">
-                  <label>Cards to Avoid</label>
-                  <textarea 
-                    className="form-control" 
+                  <label>Da evitare</label>
+                  <textarea
+                    className="form-control"
                     rows={3}
                     value={formFields.cardsToAvoid}
                     onChange={e => setFormFields({ ...formFields, cardsToAvoid: e.target.value })}
-                    placeholder="List cards with high reprint risk or price drops..."
+                    placeholder="Carte con rischio ristampa o in calo…"
                   />
                 </div>
               </div>
 
               <div className="grid-cols-2">
                 <div className="form-group">
-                  <label>Buy Zones to Verify</label>
-                  <textarea 
-                    className="form-control" 
+                  <label>Zone d’acquisto da verificare</label>
+                  <textarea
+                    className="form-control"
                     rows={2}
                     value={formFields.buyZoneNotes}
                     onChange={e => setFormFields({ ...formFields, buyZoneNotes: e.target.value })}
-                    placeholder="e.g. Shanks Alt Art: Buy zone between €380-410"
+                    placeholder="es. Shanks Alt Art: zona 380–410 €"
                   />
                 </div>
                 <div className="form-group">
-                  <label>Sell Zones to Verify</label>
-                  <textarea 
-                    className="form-control" 
+                  <label>Zone di vendita da verificare</label>
+                  <textarea
+                    className="form-control"
                     rows={2}
                     value={formFields.sellZoneNotes}
                     onChange={e => setFormFields({ ...formFields, sellZoneNotes: e.target.value })}
-                    placeholder="e.g. Nami Parallel: Sell zone above €210"
+                    placeholder="es. Nami Parallel: sopra 210 €"
                   />
                 </div>
               </div>
 
               <div className="form-group">
-                <label>Risk Notes & Warnings</label>
-                <textarea 
-                  className="form-control" 
+                <label>Rischi e avvertenze</label>
+                <textarea
+                  className="form-control"
                   rows={2}
                   value={formFields.riskNotes}
                   onChange={e => setFormFields({ ...formFields, riskNotes: e.target.value })}
-                  placeholder="Document counterfeit alerts, platform vulnerabilities, or shipping warnings..."
+                  placeholder="Contraffazioni, vulnerabilità delle piattaforme, spedizioni…"
                 />
               </div>
 
-              {/* Related Cards Selector checklist */}
               <div className="form-group">
-                <label>Select Related Watchlist Cards</label>
-                <div style={{ 
-                  maxHeight: '140px', overflowY: 'auto', border: '1px solid var(--border-color)', 
-                  borderRadius: 'var(--radius-sm)', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px',
-                  backgroundColor: 'var(--bg-input)'
+                <label>Carte collegate della watchlist</label>
+                <div style={{
+                  maxHeight: 140, overflowY: 'auto', border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-sm)', padding: 12, display: 'flex', flexDirection: 'column', gap: 7,
+                  backgroundColor: 'var(--bg-input)',
                 }}>
                   {cards.length === 0 ? (
-                    <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>No cards in watchlist yet.</p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: 12.5 }}>Nessuna carta in watchlist.</p>
                   ) : (
                     cards.map(c => {
                       const isChecked = formFields.selectedCardIds.includes(c.id);
                       return (
-                        <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: 'white' }}>
-                          <input 
-                            type="checkbox" 
+                        <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 12.5 }}>
+                          <input
+                            type="checkbox"
                             checked={isChecked}
                             onChange={() => handleToggleCard(c.id)}
                             style={{ cursor: 'pointer' }}
                           />
-                          <span>{c.name} ({c.cardNumber}) - {c.setName}</span>
+                          <span>{c.name} ({c.cardNumber}) · {c.setName}</span>
                         </label>
                       );
                     })
@@ -576,18 +552,22 @@ export default function WeeklyStrategyPage({
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
-                <button className="btn btn-secondary" type="button" onClick={() => setShowForm(false)}>Cancel</button>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 20 }}>
+                <button className="btn btn-ghost" type="button" onClick={() => setShowForm(false)}>Annulla</button>
                 <button className="btn btn-primary" type="submit" disabled={submitting}>
-                  {submitting ? 'Saving...' : editMode ? 'Save strategy' : 'Publish Strategy'}
+                  {submitting ? 'Salvataggio…' : editMode ? 'Salva modifiche' : 'Pubblica nota'}
                 </button>
               </div>
-
             </form>
           </div>
         </div>
       )}
 
+      <style>{`
+        @media (max-width: 1024px) {
+          .strategy-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { 
-  LayoutDashboard, Table, Scale, Database, Settings as SettingsIcon, 
-  HelpCircle, Info, TrendingUp 
+import {
+  LayoutDashboard, Table2, Scale, Database, Settings as SettingsIcon,
+  Info, TrendingUp, Plus, ShieldAlert,
 } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Watchlist from './pages/Watchlist';
@@ -21,13 +21,35 @@ interface AppSettings {
   showDisclaimer: boolean;
 }
 
+interface NavEntry {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  isActive: (tab: string) => boolean;
+}
+
+const MAIN_NAV: NavEntry[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard />, isActive: t => t === 'dashboard' },
+  { id: 'watchlist', label: 'Watchlist', icon: <Table2 />, isActive: t => t === 'watchlist' || t.startsWith('card-') },
+  { id: 'comparator', label: 'Comparatore', icon: <Scale />, isActive: t => t === 'comparator' },
+];
+
+const ANALYSIS_NAV: NavEntry[] = [
+  { id: 'weekly-strategy', label: 'Strategia', icon: <TrendingUp />, isActive: t => t === 'weekly-strategy' },
+  { id: 'providers', label: 'Provider', icon: <Database />, isActive: t => t === 'providers' },
+];
+
+const SYSTEM_NAV: NavEntry[] = [
+  { id: 'settings', label: 'Impostazioni', icon: <SettingsIcon />, isActive: t => t === 'settings' },
+  { id: 'disclaimer', label: 'Disclaimer', icon: <Info />, isActive: t => t === 'disclaimer' },
+];
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [editCardId, setEditCardId] = useState<string | null>(null);
   const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(null);
 
-  // Global preferences state
   const [settings, setSettings] = useState<AppSettings>({
     currency: 'EUR',
     defaultGame: 'One Piece',
@@ -36,7 +58,6 @@ export default function App() {
     showDisclaimer: true,
   });
 
-  // Load preferences from localstorage on start
   useEffect(() => {
     const saved = localStorage.getItem('cardadvisor_settings');
     if (saved) {
@@ -53,22 +74,28 @@ export default function App() {
     localStorage.setItem('cardadvisor_settings', JSON.stringify(newSettings));
   };
 
+  const goToAdd = () => {
+    setEditCardId(null);
+    setActiveTab('card-add');
+  };
+
   const renderActiveScreen = () => {
     switch (activeTab) {
       case 'dashboard':
         return (
-          <Dashboard 
-            settings={settings} 
+          <Dashboard
+            settings={settings}
             onNavigateToTab={setActiveTab}
             onNavigateToCard={(id) => {
               setSelectedCardId(id);
               setActiveTab('card-detail');
             }}
+            onNavigateToAdd={goToAdd}
           />
         );
       case 'watchlist':
         return (
-          <Watchlist 
+          <Watchlist
             settings={settings}
             onNavigateToDetail={(id) => {
               setSelectedCardId(id);
@@ -78,22 +105,19 @@ export default function App() {
               setEditCardId(id);
               setActiveTab('card-edit');
             }}
-            onNavigateToAdd={() => {
-              setEditCardId(null);
-              setActiveTab('card-add');
-            }}
+            onNavigateToAdd={goToAdd}
           />
         );
       case 'card-add':
         return (
-          <CardForm 
+          <CardForm
             onSave={() => setActiveTab('watchlist')}
             onCancel={() => setActiveTab('watchlist')}
           />
         );
       case 'card-edit':
         return (
-          <CardForm 
+          <CardForm
             cardId={editCardId}
             onSave={() => setActiveTab('watchlist')}
             onCancel={() => setActiveTab('watchlist')}
@@ -101,7 +125,7 @@ export default function App() {
         );
       case 'card-detail':
         return (
-          <CardDetail 
+          <CardDetail
             cardId={selectedCardId!}
             settings={settings}
             onBack={() => setActiveTab('watchlist')}
@@ -113,7 +137,7 @@ export default function App() {
         );
       case 'comparator':
         return (
-          <OfferComparator 
+          <OfferComparator
             onNavigateToCard={(id) => {
               setSelectedCardId(id);
               setActiveTab('card-detail');
@@ -124,14 +148,14 @@ export default function App() {
         return <ProvidersPage />;
       case 'settings':
         return (
-          <SettingsPage 
-            settings={settings} 
-            onUpdateSettings={handleUpdateSettings} 
+          <SettingsPage
+            settings={settings}
+            onUpdateSettings={handleUpdateSettings}
           />
         );
       case 'weekly-strategy':
         return (
-          <WeeklyStrategyPage 
+          <WeeklyStrategyPage
             onNavigateToCard={(id) => {
               setSelectedCardId(id);
               setActiveTab('card-detail');
@@ -143,86 +167,70 @@ export default function App() {
       case 'disclaimer':
         return <DisclaimerPage />;
       default:
-        return <div style={{ color: 'var(--text-secondary)' }}>Screen not found.</div>;
+        return <div style={{ color: 'var(--text-secondary)' }}>Pagina non trovata.</div>;
     }
   };
 
+  const renderNavItems = (entries: NavEntry[]) =>
+    entries.map(entry => (
+      <button
+        key={entry.id}
+        type="button"
+        className={`nav-item ${entry.isActive(activeTab) ? 'active' : ''}`}
+        onClick={() => setActiveTab(entry.id)}
+      >
+        {entry.icon}
+        {entry.label}
+      </button>
+    ));
+
   return (
     <div className="app-container">
-      {/* Sidebar navigation */}
+      {/* Desktop sidebar */}
       <aside className="sidebar">
         <div className="brand-section">
           <div className="brand-logo">CA</div>
           <span className="brand-name">CardAdvisor</span>
         </div>
 
-        <nav className="nav-links">
-          <div 
-            className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-            onClick={() => setActiveTab('dashboard')}
-          >
-            <LayoutDashboard />
-            Dashboard
-          </div>
-          
-          <div 
-            className={`nav-item ${activeTab === 'watchlist' || activeTab.startsWith('card-') ? 'active' : ''}`}
-            onClick={() => setActiveTab('watchlist')}
-          >
-            <Table />
-            Watchlist
-          </div>
+        <button type="button" className="btn btn-primary sidebar-add-btn" onClick={goToAdd}>
+          <Plus size={15} />
+          Nuova carta
+        </button>
 
-          <div 
-            className={`nav-item ${activeTab === 'comparator' ? 'active' : ''}`}
-            onClick={() => setActiveTab('comparator')}
-          >
-            <Scale />
-            Comparator
-          </div>
-
-          <div 
-            className={`nav-item ${activeTab === 'providers' ? 'active' : ''}`}
-            onClick={() => setActiveTab('providers')}
-          >
-            <Database />
-            Providers
-          </div>
-
-          <div 
-            className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}
-            onClick={() => setActiveTab('settings')}
-          >
-            <SettingsIcon />
-            Settings
-          </div>
-
-          <div 
-            className={`nav-item ${activeTab === 'weekly-strategy' ? 'active' : ''}`}
-            onClick={() => setActiveTab('weekly-strategy')}
-          >
-            <TrendingUp />
-            Weekly Strategy
-          </div>
-
-          <div 
-            className={`nav-item ${activeTab === 'disclaimer' ? 'active' : ''}`}
-            onClick={() => setActiveTab('disclaimer')}
-          >
-            <HelpCircle />
-            Disclaimer
-          </div>
+        <nav className="nav-links" aria-label="Navigazione principale">
+          {renderNavItems(MAIN_NAV)}
+          <div className="nav-section-label">Analisi</div>
+          {renderNavItems(ANALYSIS_NAV)}
+          <div className="nav-section-label">Sistema</div>
+          {renderNavItems(SYSTEM_NAV)}
         </nav>
 
-        {/* Cautious Positioning Notice */}
         <div className="disclaimer-badge">
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginBottom: '6px' }}>
-            <Info size={14} style={{ flexShrink: 0, marginTop: '2px' }} color="var(--color-watch)" />
-            <span style={{ fontWeight: '600', color: 'white' }}>Support Tool Only</span>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 4, color: 'var(--text-secondary)', fontWeight: 500 }}>
+            <ShieldAlert size={12} style={{ flexShrink: 0 }} />
+            <span>Strumento di supporto</span>
           </div>
-          <p>Calculations represent market signals, NOT financial advice. Value ranges may be incomplete.</p>
+          Segnali di mercato, non consulenza finanziaria. Nessuna garanzia di rendimento.
         </div>
       </aside>
+
+      {/* Mobile top bar */}
+      <div className="mobile-topbar">
+        <div className="mobile-topbar-row">
+          <div className="brand-section" style={{ padding: 0 }}>
+            <div className="brand-logo">CA</div>
+            <span className="brand-name">CardAdvisor</span>
+          </div>
+          <button type="button" className="btn btn-primary btn-sm" onClick={goToAdd}>
+            <Plus size={14} />
+            Nuova
+          </button>
+        </div>
+        <nav className="mobile-nav" aria-label="Navigazione principale">
+          {renderNavItems([...MAIN_NAV, ...ANALYSIS_NAV, ...SYSTEM_NAV])}
+        </nav>
+      </div>
 
       {/* Main viewport */}
       <main className="main-content">

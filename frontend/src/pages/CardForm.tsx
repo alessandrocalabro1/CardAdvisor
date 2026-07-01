@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  ArrowLeft, Save, Search, Sparkles, AlertCircle 
-} from 'lucide-react';
+import { ArrowLeft, Save, Search, Sparkles, AlertCircle } from 'lucide-react';
 import { apiCreateCard, apiUpdateCard, apiSearchOptcg, apiGetCardById } from '../api/client';
 
 interface CardFormProps {
@@ -12,14 +10,14 @@ interface CardFormProps {
 
 export default function CardForm({ cardId, onSave, onCancel }: CardFormProps) {
   const isEditMode = !!cardId;
-  
-  // Search state for meta autocomplete
+
+  // Metadata autocomplete
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
   const [showSearchBox, setShowSearchBox] = useState(true);
 
-  // Form states
+  // Form state
   const [game, setGame] = useState('One Piece');
   const [name, setName] = useState('');
   const [setNameField, setSetNameField] = useState('');
@@ -38,7 +36,6 @@ export default function CardForm({ cardId, onSave, onCancel }: CardFormProps) {
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Load details if editing
   useEffect(() => {
     if (!cardId) return;
     const fetchCard = async () => {
@@ -59,11 +56,11 @@ export default function CardForm({ cardId, onSave, onCancel }: CardFormProps) {
           setDemandLevel(card.demandLevel);
           setSupplyLevel(card.supplyLevel);
           setReprintRisk(card.reprintRisk);
-          setShowSearchBox(false); // No need to autofill if editing
+          setShowSearchBox(false);
         }
       } catch (err) {
         console.error('Error loading card for edit:', err);
-        setErrorMsg('Failed to load card information.');
+        setErrorMsg('Impossibile caricare i dati della carta.');
       }
     };
     fetchCard();
@@ -79,10 +76,10 @@ export default function CardForm({ cardId, onSave, onCancel }: CardFormProps) {
       const data = await apiSearchOptcg(searchQuery);
       setSearchResults(data);
       if (data.length === 0) {
-        setErrorMsg('No matching cards found. You can fill out fields manually.');
+        setErrorMsg('Nessuna carta trovata. Puoi compilare i campi manualmente.');
       }
-    } catch (err: any) {
-      setErrorMsg('Error searching metadata. Fallback to manual entry.');
+    } catch {
+      setErrorMsg('Errore nella ricerca dei metadati. Procedi con l’inserimento manuale.');
     } finally {
       setSearching(false);
     }
@@ -101,7 +98,7 @@ export default function CardForm({ cardId, onSave, onCancel }: CardFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !setNameField || !cardNumber) {
-      setErrorMsg('Card Name, Set Name, and Card Number are required fields.');
+      setErrorMsg('Nome, set e codice carta sono campi obbligatori.');
       return;
     }
 
@@ -133,81 +130,80 @@ export default function CardForm({ cardId, onSave, onCancel }: CardFormProps) {
       }
       onSave();
     } catch (err: any) {
-      setErrorMsg(err.message || 'Error occurred while saving.');
+      setErrorMsg(err.message || 'Errore durante il salvataggio.');
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-      <div className="page-header" style={{ marginBottom: '24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <button className="btn btn-secondary" onClick={onCancel} style={{ padding: '8px 12px' }}>
+    <div className="page-wrap" style={{ maxWidth: 860 }}>
+      <div className="page-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <button className="btn btn-ghost btn-icon" onClick={onCancel} aria-label="Torna alla watchlist">
             <ArrowLeft size={16} />
           </button>
           <div className="page-title-group">
-            <h1>{isEditMode ? 'Edit Card Meta' : 'Add New Card to Track'}</h1>
-            <p>{isEditMode ? 'Modify tracking metrics and attributes' : 'Register card details or search metadata databases'}</p>
+            <h1>{isEditMode ? 'Modifica carta' : 'Nuova carta'}</h1>
+            <p>{isEditMode ? 'Aggiorna attributi e parametri di monitoraggio' : 'Aggiungi un elemento alla watchlist in pochi secondi'}</p>
           </div>
         </div>
       </div>
 
       {errorMsg && (
-        <div className="card" style={{ borderLeft: '4px solid var(--color-avoid)', padding: '16px', marginBottom: '24px', backgroundColor: 'rgba(239,68,68,0.06)' }}>
-          <p style={{ color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <AlertCircle size={16} color="var(--color-avoid)" />
-            {errorMsg}
-          </p>
+        <div className="notice notice-error" style={{ marginBottom: 20 }} role="alert">
+          <AlertCircle size={15} />
+          <span>{errorMsg}</span>
         </div>
       )}
 
-      {/* Metdata Search Section for Autofill */}
+      {/* Metadata autocomplete */}
       {!isEditMode && showSearchBox && (
-        <div className="card" style={{ marginBottom: '24px', background: 'radial-gradient(circle at 100% 0%, rgba(99,102,241,0.08) 0%, transparent 60%)' }}>
-          <h3 style={{ fontSize: '15px', color: 'white', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Sparkles size={16} color="var(--accent-primary)" /> Search OPTCG Metadata for Autofill
-          </h3>
-          <form onSubmit={handleMetaSearch} style={{ display: 'flex', gap: '12px' }}>
-            <input 
-              type="text" 
-              className="form-control" 
-              placeholder="Search by Card Name or Code (e.g., Shanks or OP01-120)" 
+        <div className="card" style={{ marginBottom: 20 }}>
+          <div className="section-title" style={{ marginBottom: 10 }}>
+            <Sparkles size={13} color="var(--accent-strong)" /> Compilazione rapida (One Piece TCG)
+          </div>
+          <form onSubmit={handleMetaSearch} style={{ display: 'flex', gap: 10 }}>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Cerca per nome o codice (es. Shanks, OP01-120)…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{ flex: 1 }}
             />
-            <button className="btn btn-primary" type="submit" disabled={searching}>
+            <button className="btn btn-secondary" type="submit" disabled={searching}>
               <Search size={14} />
-              {searching ? 'Searching...' : 'Search'}
+              {searching ? 'Ricerca…' : 'Cerca'}
             </button>
           </form>
 
           {searchResults.length > 0 && (
-            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Click a card to fill out the form fields:</p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+            <div style={{ marginTop: 14 }}>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>Seleziona una carta per compilare i campi:</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {searchResults.map((c, i) => (
-                  <div 
-                    key={i} 
+                  <button
+                    key={i}
+                    type="button"
                     onClick={() => handleSelectTemplateCard(c)}
-                    style={{ 
-                      padding: '10px 14px', borderRadius: '6px', 
-                      backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-color)',
-                      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px',
-                      transition: 'border-color 0.15s'
+                    style={{
+                      padding: '8px 12px', borderRadius: 'var(--radius-sm)',
+                      backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)',
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10,
+                      transition: 'border-color 0.15s', fontFamily: 'inherit', textAlign: 'left',
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--accent-primary)'}
-                    onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-color)'}
+                    onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent-border)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
                   >
                     {c.imageUrl && (
-                      <img src={c.imageUrl} alt="" style={{ width: '28px', height: '40px', objectFit: 'cover', borderRadius: '2px' }} />
+                      <img src={c.imageUrl} alt="" style={{ width: 26, height: 37, objectFit: 'cover', borderRadius: 2 }} />
                     )}
-                    <div style={{ textAlign: 'left' }}>
-                      <div style={{ fontSize: '13px', fontWeight: '600', color: 'white' }}>{c.name}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{c.cardNumber} • {c.setName}</div>
-                    </div>
-                  </div>
+                    <span>
+                      <span style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-primary)' }}>{c.name}</span>
+                      <span style={{ display: 'block', fontSize: 11, color: 'var(--text-secondary)' }}>{c.cardNumber} · {c.setName}</span>
+                    </span>
+                  </button>
                 ))}
               </div>
             </div>
@@ -215,14 +211,13 @@ export default function CardForm({ cardId, onSave, onCancel }: CardFormProps) {
         </div>
       )}
 
-      {/* Main Form */}
-      <form onSubmit={handleSubmit} className="card" style={{ padding: '32px' }}>
-        <h3 style={{ fontSize: '18px', color: 'white', marginBottom: '24px' }}>Card Identity Details</h3>
-        
+      {/* Main form */}
+      <form onSubmit={handleSubmit} className="card" style={{ padding: 28 }}>
+        <div className="section-title">Identità della carta</div>
+
         <div className="grid-cols-2">
-          
           <div className="form-group">
-            <label>Card Game</label>
+            <label>Gioco / categoria</label>
             <select className="form-control" value={game} onChange={(e) => setGame(e.target.value)}>
               <option value="One Piece">One Piece TCG</option>
               <option value="Pokémon">Pokémon TCG</option>
@@ -232,160 +227,158 @@ export default function CardForm({ cardId, onSave, onCancel }: CardFormProps) {
           </div>
 
           <div className="form-group">
-            <label>Card Name*</label>
-            <input 
-              type="text" 
-              className="form-control" 
-              placeholder="e.g. Shanks (Parallel)" 
-              value={name} 
-              onChange={(e) => setName(e.target.value)} 
+            <label>Nome*</label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="es. Shanks (Parallel)"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               required
             />
           </div>
 
           <div className="form-group">
-            <label>Set Name*</label>
-            <input 
-              type="text" 
-              className="form-control" 
-              placeholder="e.g. Romance Dawn" 
-              value={setNameField} 
-              onChange={(e) => setSetNameField(e.target.value)} 
+            <label>Set*</label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="es. Romance Dawn"
+              value={setNameField}
+              onChange={(e) => setSetNameField(e.target.value)}
               required
             />
           </div>
 
           <div className="form-group">
-            <label>Card Number*</label>
-            <input 
-              type="text" 
-              className="form-control" 
-              placeholder="e.g. OP01-120" 
-              value={cardNumber} 
-              onChange={(e) => setCardNumber(e.target.value)} 
+            <label>Codice carta*</label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="es. OP01-120"
+              value={cardNumber}
+              onChange={(e) => setCardNumber(e.target.value)}
               required
             />
           </div>
 
           <div className="form-group">
-            <label>Rarity</label>
-            <input 
-              type="text" 
-              className="form-control" 
-              placeholder="e.g. SEC, SR, R, UC, C" 
-              value={rarity} 
-              onChange={(e) => setRarity(e.target.value)} 
+            <label>Rarità</label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="es. SEC, SR, R, UC, C"
+              value={rarity}
+              onChange={(e) => setRarity(e.target.value)}
             />
           </div>
 
           <div className="form-group">
-            <label>Card Language</label>
+            <label>Lingua</label>
             <select className="form-control" value={language} onChange={(e) => setLanguage(e.target.value)}>
-              <option value="English">English</option>
-              <option value="Japanese">Japanese</option>
-              <option value="French">French</option>
-              <option value="German">German</option>
+              <option value="English">Inglese</option>
+              <option value="Japanese">Giapponese</option>
+              <option value="French">Francese</option>
+              <option value="German">Tedesco</option>
             </select>
           </div>
 
           <div className="form-group">
-            <label>Version / Art Type</label>
-            <input 
-              type="text" 
-              className="form-control" 
-              placeholder="e.g. Parallel Alt Art, Special Illustration, Regular" 
-              value={version} 
-              onChange={(e) => setVersion(e.target.value)} 
+            <label>Versione / tipo di art</label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="es. Parallel Alt Art, Regular"
+              value={version}
+              onChange={(e) => setVersion(e.target.value)}
             />
           </div>
 
           <div className="form-group">
-            <label>Target Condition Grade</label>
+            <label>Condizione obiettivo</label>
             <select className="form-control" value={condition} onChange={(e) => setCondition(e.target.value)}>
               <option value="Near Mint">Near Mint (NM)</option>
               <option value="Excellent">Excellent (EX)</option>
               <option value="Played">Played (GD/PL)</option>
-              <option value="Mint / Slab">Pristine / Graded slab</option>
+              <option value="Mint / Slab">Gradata / Slab</option>
             </select>
           </div>
 
           <div className="form-group" style={{ gridColumn: 'span 2' }}>
-            <label>Image URL (Optional)</label>
-            <input 
-              type="url" 
-              className="form-control" 
-              placeholder="e.g. https://domain.com/image.jpg" 
-              value={imageUrl} 
-              onChange={(e) => setImageUrl(e.target.value)} 
+            <label>URL immagine (opzionale)</label>
+            <input
+              type="url"
+              className="form-control"
+              placeholder="https://…"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
             />
           </div>
 
-          <div className="form-group" style={{ gridColumn: 'span 2' }}>
-            <label>Notes / Personal target observations</label>
-            <textarea 
-              className="form-control" 
-              rows={3} 
-              placeholder="Write any personal context, target purchase prices, or notes..." 
-              value={notes} 
-              onChange={(e) => setNotes(e.target.value)} 
+          <div className="form-group" style={{ gridColumn: 'span 2', marginBottom: 0 }}>
+            <label>Tesi di monitoraggio / note</label>
+            <textarea
+              className="form-control"
+              rows={3}
+              placeholder="Perché questa carta merita attenzione: prezzo obiettivo, contesto di mercato, fonte…"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
             />
+            <span className="form-hint">La tesi resta visibile nella pagina di dettaglio come promemoria della tua valutazione.</span>
           </div>
-
         </div>
 
-        <h3 style={{ fontSize: '18px', color: 'white', marginTop: '32px', marginBottom: '24px', paddingTop: '24px', borderTop: '1px solid rgba(255,255,255,0.03)' }}>
-          Signals & Market Metrics
-        </h3>
+        <div className="section-title" style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
+          Segnali di mercato
+        </div>
 
         <div className="grid-cols-2">
-
           <div className="form-group">
-            <label>Tracking Status</label>
+            <label>Priorità di osservazione</label>
             <select className="form-control" value={status} onChange={(e) => setStatus(e.target.value)}>
-              <option value="WATCH">Watching (Watchlist)</option>
-              <option value="CONSIDER">Considering offer</option>
-              <option value="OWNED">Owned (Portfolio)</option>
-              <option value="SELL">Intend to Sell</option>
-              <option value="AVOID">Avoid listing</option>
+              <option value="WATCH">In osservazione</option>
+              <option value="CONSIDER">Da valutare</option>
+              <option value="OWNED">In portafoglio</option>
+              <option value="SELL">Da vendere</option>
+              <option value="AVOID">Da evitare</option>
             </select>
           </div>
 
           <div className="form-group">
-            <label>Market Demand Level</label>
+            <label>Domanda di mercato</label>
             <select className="form-control" value={demandLevel} onChange={(e) => setDemandLevel(e.target.value)}>
-              <option value="LOW">Low</option>
-              <option value="MEDIUM">Medium</option>
-              <option value="HIGH">High</option>
+              <option value="LOW">Bassa</option>
+              <option value="MEDIUM">Media</option>
+              <option value="HIGH">Alta</option>
             </select>
           </div>
 
           <div className="form-group">
-            <label>Market Supply Level</label>
+            <label>Offerta di mercato</label>
             <select className="form-control" value={supplyLevel} onChange={(e) => setSupplyLevel(e.target.value)}>
-              <option value="LOW">Low</option>
-              <option value="MEDIUM">Medium</option>
-              <option value="HIGH">High</option>
+              <option value="LOW">Bassa</option>
+              <option value="MEDIUM">Media</option>
+              <option value="HIGH">Alta</option>
             </select>
           </div>
 
           <div className="form-group">
-            <label>Reprint Risk</label>
+            <label>Rischio di ristampa</label>
             <select className="form-control" value={reprintRisk} onChange={(e) => setReprintRisk(e.target.value)}>
-              <option value="LOW">Low Reprint Risk</option>
-              <option value="MEDIUM">Medium Reprint Risk</option>
-              <option value="HIGH">High Reprint Risk</option>
+              <option value="LOW">Basso</option>
+              <option value="MEDIUM">Medio</option>
+              <option value="HIGH">Alto</option>
             </select>
           </div>
-
         </div>
 
-        <div style={{ display: 'flex', gap: '16px', justifyContent: 'flex-end', marginTop: '32px' }}>
-          <button className="btn btn-secondary" type="button" onClick={onCancel} disabled={saving}>
-            Cancel
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 24 }}>
+          <button className="btn btn-ghost" type="button" onClick={onCancel} disabled={saving}>
+            Annulla
           </button>
           <button className="btn btn-primary" type="submit" disabled={saving}>
             <Save size={14} />
-            {saving ? 'Saving...' : 'Save Card Metadata'}
+            {saving ? 'Salvataggio…' : isEditMode ? 'Salva modifiche' : 'Aggiungi alla watchlist'}
           </button>
         </div>
       </form>
